@@ -16,4 +16,8 @@ Then open `http://localhost:8080/`.
 
 ## Deployment
 
-The GitHub Pages workflow publishes the repository root on pushes to `main`.
+GitHub Pages must use **GitHub Actions** as its source. Once Pages is enabled for the repository, the deployment workflow publishes the repository root on pushes to `main`.
+
+## License
+
+Source code is licensed under the [MIT License](LICENSE).
