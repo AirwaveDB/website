@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>AirwaveDB</title>
+  <meta name="description" content="Browse and listen to internet radio stations indexed by AirwaveDB.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./">AirwaveDB</a>
+    <nav>
+      <a href="https://github.com/AirwaveDB/database">Database</a>
+      <a href="https://github.com/AirwaveDB/streams">Streams</a>
+      <a href="https://github.com/AirwaveDB/api">API</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="intro">
+      <h1>Internet radio directory</h1>
+      <p id="summary">Loading dataset…</p>
+    </section>
+
+    <section class="controls" aria-label="Station filters">
+      <label>
+        Country
+        <select id="country" disabled>
+          <option value="">Select a country</option>
+        </select>
+      </label>
+      <label class="search-wrap">
+        Search
+        <input id="search" type="search" placeholder="Station, category, tag…" disabled>
+      </label>
+      <label>
+        Type
+        <select id="type" disabled>
+          <option value="">Any type</option>
+          <option value="public">Public</option>
+          <option value="community">Community</option>
+          <option value="college">College</option>
+          <option value="internet">Internet</option>
+        </select>
+      </label>
+    </section>
+
+    <div id="status" class="status" role="status"></div>
+    <section id="stations" class="station-list" aria-live="polite"></section>
+  </main>
+
+  <footer>
+    <p>AirwaveDB lists third-party stream endpoints. Audio is loaded directly from the broadcaster.</p>
+  </footer>
+
+  <template id="station-template">
+    <article class="station">
+      <div class="station-main">
+        <div class="station-title-row">
+          <h2 class="station-name"></h2>
+          <span class="station-type"></span>
+        </div>
+        <div class="station-meta"></div>
+        <div class="station-tags"></div>
+      </div>
+      <div class="station-actions">
+        <select class="stream-select" aria-label="Stream"></select>
+        <button class="play" type="button">Play</button>
+        <a class="homepage" target="_blank" rel="noreferrer">Website</a>
+      </div>
+      <audio class="player" controls preload="none"></audio>
+    </article>
+  </template>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
