@@ -227,6 +227,14 @@ button:not(:disabled):hover { background: var(--panel-2); }
   height: 34px;
 }
 
+.more {
+  display: block;
+  margin: 22px auto 0;
+  min-width: 160px;
+}
+
+.more[hidden] { display: none; }
+
 footer {
   width: min(1180px, calc(100% - 40px));
   margin: 0 auto;
