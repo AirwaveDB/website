@@ -1,4 +1,5 @@
 const API = 'https://raw.githubusercontent.com/AirwaveDB/api/main/v1';
+const PAGE_SIZE = 100;
 
 const country = document.querySelector('#country');
 const search = document.querySelector('#search');
@@ -6,9 +7,11 @@ const type = document.querySelector('#type');
 const status = document.querySelector('#status');
 const stationsEl = document.querySelector('#stations');
 const summary = document.querySelector('#summary');
+const more = document.querySelector('#more');
 const template = document.querySelector('#station-template');
 
 let current = [];
+let visibleCount = PAGE_SIZE;
 let countryNames;
 
 try {
@@ -41,19 +44,24 @@ function searchable(station) {
   ].filter(Boolean).join(' ').toLocaleLowerCase();
 }
 
-function render() {
+function filteredStations() {
   const query = search.value.trim().toLocaleLowerCase();
   const wantedType = type.value;
-  const filtered = current.filter((station) => {
+  return current.filter((station) => {
     if (wantedType && station.type !== wantedType) return false;
     if (query && !searchable(station).includes(query)) return false;
     return true;
   });
+}
+
+function render() {
+  const filtered = filteredStations();
+  const visible = filtered.slice(0, visibleCount);
 
   stationsEl.replaceChildren();
   const fragment = document.createDocumentFragment();
 
-  for (const station of filtered) {
+  for (const station of visible) {
     const node = template.content.firstElementChild.cloneNode(true);
     node.querySelector('.station-name').textContent = station.name;
 
@@ -68,7 +76,8 @@ function render() {
     node.querySelector('.station-meta').textContent = meta.join(' · ');
 
     const tags = node.querySelector('.station-tags');
-    for (const value of [...(station.categories || []), ...(station.tags || []).slice(0, 5)]) {
+    const tagValues = [...new Set([...(station.categories || []), ...(station.tags || [])])].slice(0, 8);
+    for (const value of tagValues) {
       const span = document.createElement('span');
       span.textContent = value;
       tags.append(span);
@@ -95,6 +104,7 @@ function render() {
         option.textContent = fmtStream(stream);
         select.append(option);
       });
+
       play.addEventListener('click', async () => {
         const stream = streams[Number(select.value) || 0];
         if (!stream) return;
@@ -107,13 +117,26 @@ function render() {
         }
       });
       player.addEventListener('pause', () => { if (!player.ended) play.textContent = 'Play'; });
+      player.addEventListener('error', () => { play.textContent = 'Failed'; });
     }
 
     fragment.append(node);
   }
 
   stationsEl.append(fragment);
-  status.textContent = `${filtered.length.toLocaleString()} station${filtered.length === 1 ? '' : 's'}`;
+
+  const shown = visible.length;
+  status.textContent = filtered.length
+    ? `Showing ${shown.toLocaleString()} of ${filtered.length.toLocaleString()} station${filtered.length === 1 ? '' : 's'}`
+    : 'No stations match these filters';
+
+  more.hidden = shown >= filtered.length;
+  more.textContent = `Show ${Math.min(PAGE_SIZE, filtered.length - shown).toLocaleString()} more`;
+}
+
+function resetAndRender() {
+  visibleCount = PAGE_SIZE;
+  render();
 }
 
 async function loadCountry(code) {
@@ -123,6 +146,7 @@ async function loadCountry(code) {
     status.textContent = '';
     search.disabled = true;
     type.disabled = true;
+    more.hidden = true;
     return;
   }
 
@@ -130,6 +154,7 @@ async function loadCountry(code) {
   stationsEl.replaceChildren();
   search.disabled = true;
   type.disabled = true;
+  more.hidden = true;
 
   try {
     const response = await fetch(`${API}/countries/${code.toLowerCase()}.json`);
@@ -138,7 +163,7 @@ async function loadCountry(code) {
     current = data.stations || [];
     search.disabled = false;
     type.disabled = false;
-    render();
+    resetAndRender();
   } catch (error) {
     current = [];
     status.textContent = `Failed to load ${code}: ${error.message}`;
@@ -170,7 +195,11 @@ async function init() {
 }
 
 country.addEventListener('change', () => loadCountry(country.value));
-search.addEventListener('input', render);
-type.addEventListener('change', render);
+search.addEventListener('input', resetAndRender);
+type.addEventListener('change', resetAndRender);
+more.addEventListener('click', () => {
+  visibleCount += PAGE_SIZE;
+  render();
+});
 
 init();
