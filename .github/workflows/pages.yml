@@ -1,35 +1,44 @@
-name: Deploy Pages
+name: Validate website
 
 on:
   push:
+    branches: [main]
+  pull_request:
     branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: pages
+  group: website-validation-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
-      - name: Validate site script
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Validate JavaScript
         run: node --check app.js
-      - uses: actions/configure-pages@v5
-        with:
-          enablement: true
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: .
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Validate required UI hooks
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFile } from 'node:fs/promises';
+          const html = await readFile('index.html', 'utf8');
+          const requiredIds = ['country', 'search', 'type', 'status', 'stations', 'summary', 'more', 'station-template'];
+          const missing = requiredIds.filter((id) => !html.includes(`id="${id}"`));
+          if (missing.length) {
+            console.error(`Missing required element IDs: ${missing.join(', ')}`);
+            process.exit(1);
+          }
+          if (!html.includes('src="app.js"') || !html.includes('href="styles.css"')) {
+            console.error('index.html must reference app.js and styles.css');
+            process.exit(1);
+          }
+          console.log('Website structure validated');
+          NODE
